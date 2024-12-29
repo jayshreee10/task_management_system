@@ -1,0 +1,62 @@
+scalar DateTime
+    @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+input UserFilterInput {
+    email: String @rules(apply: ["email"])
+    name: String @where(operator: "like")
+}
+
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    email_verified_at: DateTime
+    created_at: DateTime!
+    updated_at: DateTime!
+}
+
+type AuthPayload {
+    token: String!
+    user: User!
+}
+
+type Query {
+    me: User! @auth
+    user(id: ID @eq @rules(apply: ["prohibits:email", "required_without:email"]), email: String @eq @rules(apply: ["prohibits:id", "required_without:id", "email"])): User @find
+    users(filter: UserFilterInput, first: Int @paginate(defaultCount: 10)): [User!]! @paginate(defaultCount: 10)
+    tasksForUser(assigned_to: ID!, filter: TaskFilterInput): [Task!] @field(resolver: "App\\GraphQL\\Queries\\TasksForUser")
+    task(id: ID!): Task @field(resolver: "App\\GraphQL\\Queries\\TaskById")
+}
+
+type Comment {
+   user_id: ID
+   username:String
+    comment: String
+    timestamp: DateTime
+}
+
+type Task {
+    id: ID!
+    title: String
+    description: String
+    status: String
+    due_date: DateTime
+    created_by: ID
+    priority: String
+    assigned_to: ID
+    created_at: DateTime
+    updated_at: DateTime
+    team_id: ID
+    name: String
+    comments: [Comment!]
+}
+
+
+input TaskFilterInput {
+    assigned_to: ID! @rules(apply: ["required"])
+}
+
+type Mutation {
+    login(email: String!, password: String!): AuthPayload! @field(resolver: "AuthMutator@login")
+    signup(name: String!, email: String!, password: String!): AuthPayload! @field(resolver: "AuthMutator@signup")
+}
